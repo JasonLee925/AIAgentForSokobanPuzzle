@@ -1,0 +1,55 @@
+.blog,
+.article {
+  position: relative;
+  height: fit-content;
+  padding-bottom: 0;
+}
+
+.article,
+.title {
+  min-height: auto;
+  height: fit-content;
+  padding: 0 10px;
+  white-space: normal;
+}
+
+.published {
+  margin: 20px 0 60px;
+  padding: 0 10px;
+  text-transform: capitalize;
+  font-style: italic;
+  color: #2b2b2b;
+}
+
+.published span {
+  font-weight: 700;
+  font-style: normal;
+}
+
+.article * {
+  margin: 30px 0;
+  color: #2b2b2b;
+}
+
+.article-image {
+  max-width: 100%;
+  max-height: 400px;
+  display: block;
+  margin: 30px auto;
+  object-fit: contain;
+}
+
+.btn.delete-btn {
+  background-color: white;
+  color: rgb(99, 96, 96);
+  border: 2px solid rgb(99, 96, 96);
+  padding: 10px 20px; /* Added 'px' to padding values */
+  cursor: pointer;
+  margin-top: 10px;
+  border-radius: 10px;
+  font-size: 17px;
+}
+
+.btn.delete-btn:hover {
+  background-color: goldenrod;
+}

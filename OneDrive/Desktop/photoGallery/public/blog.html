@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blog:</title>
+
+    <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/editor.css" />
+    <link rel="stylesheet" href="css/blog.css" />
+
+ 
+  </head>
+
+  <body>
+    <nav class="navbar">
+      <img src="img/logo.png" class="logo" alt="" />
+      <ul class="links-container">
+        <li class="Link-item"><a href="/home.html" class="link">Image Gallery</a></li>
+        <li class="Link-item"><a href="/editor.html" class="link">Post a photo</a></li>
+          <li class="Link-item"><a href="/index.html" class="link">Logout</a></li>
+      </ul>
+    </nav>
+    <div class="banner"></div>
+
+    <div class="blog">
+      <h1 class="title">title</h1>
+      <p class="published"><span>published at -</span></p>
+      <div class="article">Article Story</div>
+      <!-- Add the delete button -->
+      <button id="delete-btn">Delete Article</button>
+    </div>
+
+    <!-- Script section -->
+    <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"
+    ></script>
+    <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"
+    ></script>
+    <script type="module" src="js/firebase.js"></script>
+    <script type="module" src="js/blog.js"></script>
+  </body>
+</html>
