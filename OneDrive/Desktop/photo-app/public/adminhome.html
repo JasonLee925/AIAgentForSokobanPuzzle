@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blog: Homepage</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/home.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <img src="img/logo.png" class="logo" alt="" />
+      <ul class="links-container">
+        <li class="Link-item"><a href="/adminhome.html" class="link">Image Gallery</a></li>
+        <li class="Link-item"><a href="/imagesearch.html" class="link">Image Search</a></li>
+        <li class="Link-item"><a href="/admineditor.html" class="link">Post a photo</a></li>
+          <li class="Link-item"><a href="/index.html" class="link">Logout</a></li>
+      </ul>
+    </nav>
+    <header class="header">
+      <div class="content">
+        <h1 class="heading">
+          <span class="small">Let's capture and keep memories with every stunning</span>
+          <span class="no-fill">Images</span>
+        </h1>
+        <a href="/editor" class="btn">Post a photo</a>
+      </div>
+    </header>
+
+    <!-- blog section -->
+    <section class="blogs-section">
+      <!-- <div class="blog-card">
+        <img src="img/header.jpg" class="blog-image" alt="" />
+        <h1 class="blog-title">A pancake cafe in West End</h1>
+        <p class="blog-overview">
+          Step into the delicious world of Pancake Café Chronicles, where each
+          post is a delectable journey through the heart of our beloved pancake
+          café. As a passionate writer and pancake aficionado, I invite you to
+          explore the artistry behind our café’s mouthwatering creations.
+        </p>
+        <a href="/" class="btn dark">read</a> </div> -->
+      </div>
+    </section>
+
+   <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"
+    ></script>
+    <script
+      type="module"
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"
+    ></script>
+    <script type="module" src="js/firebase.js"></script>
+    <script type="module" src="js/home.js"></script>
+
+  </body>
+</html>
