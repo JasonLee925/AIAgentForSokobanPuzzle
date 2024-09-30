@@ -75,12 +75,16 @@ class SokobanPuzzle(search.Problem):
     macro actions. If self.macro is set False, the 'actions' function should 
     return elementary actions.
     
-    
     '''
     
+    
     def __init__(self, warehouse):
-        raise NotImplementedError()
-
+        
+        self.wh = warehouse
+        self.allow_taboo_push = True
+        self.macro = False
+        
+        
     def actions(self, state):
         """
         Return the list of actions that can be executed in the given state.
@@ -89,7 +93,64 @@ class SokobanPuzzle(search.Problem):
         'self.allow_taboo_push' and 'self.macro' should be tested to determine
         what type of list of actions is to be returned.
         """
-        raise NotImplementedError
+        
+        x, y = state
+        action_list = []
+        obstacles = self.wh.boxes + self.wh.walls 
+
+        # find the boundaries of the warehouse
+        min_x = min ([x for x,y in self.wh.walls])
+        max_x = max ([x for x,y in self.wh.walls])
+        min_y = min ([y for x,y in self.wh.walls])
+        max_y = max ([y for x,y in self.wh.walls])
+        
+        # check the elementary moves (left, right, down, up) 
+        if (x-1, y) not in obstacles and x > min_x:
+            action_list.append("Left")
+        if (x+1, y) not in obstacles and x < max_x:
+            action_list.append("Right")
+        if (x, y-1) not in obstacles and y > min_y:
+            action_list.append("Up")
+        if (x, y+1) not in obstacles and y < max_y:
+            action_list.append("Down") 
+        
+        # marco moves 
+        if self.macro == True:
+            # example: 
+            # If the box is on the left (x-1), 
+            # and the from the position of the box to the left (x-2) where there is no obstacle, 
+            # add "Left" to action_list 
+            if (x-1, y) in self.wh.boxes and (x-2, y) not in obstacles:
+                action_list.append("Left")
+            if (x+1, y) in self.wh.boxes and (x+2, y) not in obstacles:
+                action_list.append("Right")
+            if (x, y-1) in self.wh.boxes and (x, y-2) not in obstacles:
+                action_list.append("Up")
+            if (x, y+1) in self.wh.boxes and (x, y+2) not in obstacles:
+                action_list.append("Down")
+        
+            # allow_taboo_push
+            if self.allow_taboo_push == False: 
+                if (x-1, y) in self.wh.boxes and "Left" in action_list:
+                    bx, by = x-1, y
+                    if (bx-1, by-1) in obstacles or (bx-1, by+1) in obstacles
+                        action_list.remove("Left")
+                if (x+1, y) in self.wh.boxes and "Right" in action_list:
+                    bx, by = x+1, y
+                    if (bx+1, by-1) in obstacles or (bx-1, by+1) in obstacles
+                        action_list.remove("Right")
+                if (x, y-1) in self.wh.boxes and "Up" in action_list:
+                    bx, by = x, y-1
+                    if (bx-1, by-1) in obstacles or (bx+1, by-1) in obstacles
+                        action_list.remove("Up")
+                if (x, y+1) in self.wh.boxes and "Down" in action_list:
+                    bx, by = x, y+1
+                    if (bx-1, by+1) in obstacles or (bx+1, by+1) in obstacles
+                        action_list.remove("Down")
+                     
+                     
+        
+        raise action_list
 
 
 def check_action_seq(warehouse, action_seq):
