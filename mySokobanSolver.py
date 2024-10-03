@@ -92,6 +92,23 @@ class SokobanPuzzle(search.Problem):
         raise NotImplementedError
 
 
+def check_action_seq_update_wh (warehouse, action_seq, coord1, coord2):
+    '''
+    @param coord1: a coordinate of "one" step from the original coordinate
+    @param coord2: a coordinate of "two" steps from the original coordinate
+    '''
+    if coord1 in warehouse.walls:
+            return 'Failure'
+        
+    if coord1 in warehouse.boxes: 
+        if coord2 in set(warehouse.walls + warehouse.boxes):
+            return 'Failure'
+        box_idx = warehouse.boxes.index(coord1) # box index
+        warehouse.boxes[box_idx] = coord2 # update box
+
+    warehouse.worker = tuple(coord1) # update worker
+    return check_action_seq(warehouse, action_seq)
+
 def check_action_seq(warehouse, action_seq):
     '''
     
@@ -116,63 +133,23 @@ def check_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     
-    x, y = warehouse.worker
-    wallsAndBoxes = set(warehouse.walls + warehouse.boxes)
+    wh = warehouse.copy()
+    x, y = wh.worker
+    # wallsAndBoxes = set(wh.walls + wh.boxes)
     
-    for action in action_seq:
-        if action == "Left":
-            if (x-1,y) in warehouse.walls:
-                return 'Failure'
-            
-            if (x-1,y) in warehouse.boxes: 
-                if (x-2,y) in wallsAndBoxes:
-                    return 'Failure'
-                box_idx = warehouse.boxes.index((x-1,y)) # box index
-                warehouse.boxes[box_idx] = (x-2,y) # update box
-
-            warehouse.worker = tuple((x-1, y)) # update worker
-            x-=1 
-            
-        elif action == "Right":
-            if (x+1,y) in warehouse.walls :
-                return 'Failure'
-            
-            if (x+1,y) in warehouse.boxes:
-                if (x+2,y) in wallsAndBoxes:
-                    return 'Failure'
-                box_idx = warehouse.boxes.index((x+1,y)) # box index
-                warehouse.boxes[box_idx] = (x+2,y) # update box
-
-            warehouse.worker = tuple((x+1, y)) # update worker
-            x+=1 
-            
-        elif action == "Up":
-            if (x,y-1) in warehouse.walls:
-                return 'Failure'
-            
-            if (x,y-1) in warehouse.boxes: 
-                if (x,y-2) in wallsAndBoxes:
-                    return 'Failure'
-                box_idx = warehouse.boxes.index((x,y-1)) # box index
-                warehouse.boxes[box_idx] = (x,y-2) # update box
-
-            warehouse.worker = tuple((x, y-1)) # update worker
-            y-=1 
-            
-        elif action == "Down":
-            if (x,y+1) in warehouse.walls:
-                return 'Failure'
-            
-            if (x,y+1) in warehouse.boxes: 
-                if (x,y+2) in wallsAndBoxes:
-                    return 'Failure'
-                box_idx = warehouse.boxes.index((x,y+1)) # box index
-                warehouse.boxes[box_idx] = (x,y+2) # update box
-
-            warehouse.worker = tuple((x, y+1)) # update worker
-            y+=1 
-
-    
+    if not action_seq:
+        return warehouse.__str__()
+        
+    action = action_seq.pop(0)
+    if action == "Left":
+        return check_action_seq_update_wh(wh, action_seq, (x-1,y), (x-2,y))
+    elif action == "Right":
+        return check_action_seq_update_wh(wh, action_seq, (x+1,y), (x+2,y))
+    elif action == "Up":
+        return check_action_seq_update_wh(wh, action_seq, (x,y-1), (x,y-2))
+    elif action == "Down":
+        return check_action_seq_update_wh(wh, action_seq, (x,y+1), (x,y+2))
+        
     return warehouse.__str__()
 
 
