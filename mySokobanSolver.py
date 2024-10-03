@@ -116,9 +116,64 @@ def check_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     
-    ##         "INSERT YOUR CODE HERE"
+    x, y = warehouse.worker
+    wallsAndBoxes = set(warehouse.walls + warehouse.boxes)
     
-    raise NotImplementedError()
+    for action in action_seq:
+        if action == "Left":
+            if (x-1,y) in warehouse.walls:
+                return 'Failure'
+            
+            if (x-1,y) in warehouse.boxes: 
+                if (x-2,y) in wallsAndBoxes:
+                    return 'Failure'
+                box_idx = warehouse.boxes.index((x-1,y)) # box index
+                warehouse.boxes[box_idx] = (x-2,y) # update box
+
+            warehouse.worker = tuple((x-1, y)) # update worker
+            x-=1 
+            
+        elif action == "Right":
+            if (x+1,y) in warehouse.walls :
+                return 'Failure'
+            
+            if (x+1,y) in warehouse.boxes:
+                if (x+2,y) in wallsAndBoxes:
+                    return 'Failure'
+                box_idx = warehouse.boxes.index((x+1,y)) # box index
+                warehouse.boxes[box_idx] = (x+2,y) # update box
+
+            warehouse.worker = tuple((x+1, y)) # update worker
+            x+=1 
+            
+        elif action == "Up":
+            if (x,y-1) in warehouse.walls:
+                return 'Failure'
+            
+            if (x,y-1) in warehouse.boxes: 
+                if (x,y-2) in wallsAndBoxes:
+                    return 'Failure'
+                box_idx = warehouse.boxes.index((x,y-1)) # box index
+                warehouse.boxes[box_idx] = (x,y-2) # update box
+
+            warehouse.worker = tuple((x, y-1)) # update worker
+            y-=1 
+            
+        elif action == "Down":
+            if (x,y+1) in warehouse.walls:
+                return 'Failure'
+            
+            if (x,y+1) in warehouse.boxes: 
+                if (x,y+2) in wallsAndBoxes:
+                    return 'Failure'
+                box_idx = warehouse.boxes.index((x,y+1)) # box index
+                warehouse.boxes[box_idx] = (x,y+2) # update box
+
+            warehouse.worker = tuple((x, y+1)) # update worker
+            y+=1 
+
+    
+    return warehouse.__str__()
 
 
 def solve_sokoban_elem(warehouse):
