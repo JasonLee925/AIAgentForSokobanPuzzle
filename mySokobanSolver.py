@@ -44,9 +44,86 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.  
     '''
-    ##         "INSERT YOUR CODE HERE"    
-    raise NotImplementedError()
+    # find the boundaries of the maze
+    # min_x = min ([x for x,y in warehouse.walls])
+    max_x = max ([x for x,y in warehouse.walls])
+    # min_y = min ([y for x,y in warehouse.walls])
+    max_y = max ([y for x,y in warehouse.walls])
+    
+    # 1. find corners 
+    corners = []
+    for y in range(max_y+1):
+        for x in range(max_x+1): 
+            if (x, y) not in set(warehouse.walls + warehouse.targets):
+                if( ((x-1,y) in warehouse.walls and (x,y-1) in warehouse.walls) or 
+                    ((x-1,y) in warehouse.walls and (x,y+1) in warehouse.walls) or
+                    ((x+1,y) in warehouse.walls and (x,y-1) in warehouse.walls) or
+                    ((x+1,y) in warehouse.walls and (x,y+1) in warehouse.walls)
+                ):
+                    # print((x,y))
+                    corners.append((x,y))
+    
+    # 2. find inner space
+    inner_cells = []
+    for y in range(max_y+1):
+        if y-1 < 0 or y+1 > max_y continue
+        
+        is_inner = False
+        wall_count = 0
+        for x in range(max_x+1):
+            
+            cell = (x,y)
+            if cell in warehouse.walls:
+                wall_count+=1
+                if wall_count == 1 :
+                    is_inner = True
+                    continue
+                is_inner = False
+            
+            if (x,y-1) in inner_cells:
+                is_inner = True
+            
+            if is_inner:
+                # if cell in not set(warehouse.boxes + warehouse.worker + warehouse.targets):
+                # meaning the cell is an empty space, and it is inner
+                inner_cells.append(cell)
+                
+                
+    # 3. check if corners are in inner_cells, if so, the corners are taboo cells      
+    taboo_cells = []
+    # test: taboo_cells = [(1,1), (4,3), (4,4), (1,5), (2,5)]
+    
+    
+    
+    # 4. draw the new puzzle in string presentation
+    string_rep_puzzle = ""
+    x = 0
+    y = 0
+    for cell in str(warehouse):
+        if cell == "\n":
+            y += 1
+            x = 0
+            string_rep_puzzle += cell
+            continue # skip one cell cause the puzzle has a space gap in every fisrt line
+    
+        # if (x, y) in taboo_cells:
+        #     cell = "X"
+        
+        if cell not in [" ", "#", "X"]:
+            cell = " "
 
+        string_rep_puzzle += cell
+        
+        # print(cell + " ---> (" + str(x) + ", " + str(y) + ")")
+
+        x += 1
+    
+    
+    
+    print(string_rep_puzzle)
+    return string_rep_puzzle
+      
+    
 
 class SokobanPuzzle(search.Problem):
     '''
