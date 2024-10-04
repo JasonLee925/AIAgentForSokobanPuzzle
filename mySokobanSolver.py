@@ -84,8 +84,6 @@ def taboo_cells(warehouse):
                 is_inner = True
             
             if is_inner:
-                # if cell in not set(warehouse.boxes + warehouse.worker + warehouse.targets):
-                # meaning the cell is an empty space, and it is inner
                 inner_cells.append(cell)
                 
                 
