@@ -138,7 +138,7 @@ def check_action_seq(warehouse, action_seq):
     # wallsAndBoxes = set(wh.walls + wh.boxes)
     
     if not action_seq:
-        return warehouse.__str__()
+        return wh.__str__()
         
     action = action_seq.pop(0)
     if action == "Left":
@@ -150,7 +150,7 @@ def check_action_seq(warehouse, action_seq):
     elif action == "Down":
         return check_action_seq_update_wh(wh, action_seq, (x,y+1), (x,y+2))
         
-    return warehouse.__str__()
+    return wh.__str__()
 
 
 def solve_sokoban_elem(warehouse):
