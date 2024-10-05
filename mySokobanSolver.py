@@ -45,9 +45,9 @@ def taboo_cells(warehouse):
        and the boxes.  
     '''
     # find the boundaries of the maze
-    # min_x = min ([x for x,y in warehouse.walls])
+    min_x = min ([x for x,y in warehouse.walls])
     max_x = max ([x for x,y in warehouse.walls])
-    # min_y = min ([y for x,y in warehouse.walls])
+    min_y = min ([y for x,y in warehouse.walls])
     max_y = max ([y for x,y in warehouse.walls])
     
     # 1. find corners 
@@ -60,37 +60,37 @@ def taboo_cells(warehouse):
                     ((x+1,y) in warehouse.walls and (x,y-1) in warehouse.walls) or
                     ((x+1,y) in warehouse.walls and (x,y+1) in warehouse.walls)
                 ):
-                    # print((x,y))
                     corners.append((x,y))
     
     # 2. find inner space
     inner_cells = []
-    for y in range(max_y+1):
-        if y-1 < 0 or y+1 > max_y continue
-        
-        is_inner = False
-        wall_count = 0
-        for x in range(max_x+1):
-            
-            cell = (x,y)
-            if cell in warehouse.walls:
-                wall_count+=1
-                if wall_count == 1 :
-                    is_inner = True
-                    continue
-                is_inner = False
-            
-            if (x,y-1) in inner_cells:
-                is_inner = True
-            
-            if is_inner:
-                inner_cells.append(cell)
-                
-                
-    # 3. check if corners are in inner_cells, if so, the corners are taboo cells      
-    taboo_cells = []
-    # test: taboo_cells = [(1,1), (4,3), (4,4), (1,5), (2,5)]
+    y_cells = []            
+    x_cells = []
     
+    for y in range(max_y + 1): # horizontally find cells between min and max wall's coordinates
+        min_x_row = min(_x for _x, _y in warehouse.walls if y == _y)
+        max_x_row = max(_x for _x, _y in warehouse.walls if y == _y)
+        for x in range(min_x_row + 1, max_x_row):
+            cc = (x,y) # checking cell
+            if cc not in warehouse.walls:
+                x_cells.append(cc)
+    
+    for x in range(max_x + 1): # vertically find cells between min and max wall's coordinates
+        min_y_row = min(_y for _x, _y in warehouse.walls if x == _x)
+        max_y_row = max(_y for _x, _y in warehouse.walls if x == _x)
+        for y in range(min_y_row + 1, max_y_row):
+            cc = (x,y) # checking cell
+            if cc not in warehouse.walls:
+                y_cells.append(cc)
+           
+    inner_cells = set(x_cells) & set(y_cells)     
+                
+                
+    # 3. find taboos      
+    taboo_cells = []
+    for corner in corners:
+        if corner in inner_cells:
+            taboo_cells.append(corner)
     
     
     # 4. draw the new puzzle in string presentation
@@ -104,16 +104,17 @@ def taboo_cells(warehouse):
             string_rep_puzzle += cell
             continue # skip one cell cause the puzzle has a space gap in every fisrt line
     
-        # if (x, y) in taboo_cells:
-        #     cell = "X"
+        if (x, y) in taboo_cells:
+            cell = "X"
         
-        if cell not in [" ", "#", "X"]:
+        # TEST: mark inner cells
+        # if (x, y) in inner_cells:
+        #     cell = "❤️"
+        
+        if cell not in [" ", "#", "X", "❤️"]:
             cell = " "
 
         string_rep_puzzle += cell
-        
-        # print(cell + " ---> (" + str(x) + ", " + str(y) + ")")
-
         x += 1
     
     
