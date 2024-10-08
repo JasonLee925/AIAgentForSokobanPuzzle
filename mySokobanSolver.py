@@ -20,7 +20,11 @@ def my_team():
     e.g.  [ (1234567, 'Ada', 'Lovelace'), (1234568, 'Grace', 'Hopper'), (1234569, 'Eva', 'Tardos') ]
     '''
 
-    raise NotImplementedError()
+    return [
+         ('n11794615', 'Saki', 'Endo'),  
+         ('n11514256', 'Sheng', 'Lee')
+    ]
+
  
 
 def taboo_cells(warehouse):
@@ -44,8 +48,85 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.  
     '''
-    ##         "INSERT YOUR CODE HERE"    
-    raise NotImplementedError()
+    
+     # find the boundaries of the maze
+    min_x = min ([x for x,y in warehouse.walls])
+    max_x = max ([x for x,y in warehouse.walls])
+    min_y = min ([y for x,y in warehouse.walls])
+    max_y = max ([y for x,y in warehouse.walls])
+    
+    # 1. find corners 
+    corners = []
+    for y in range(max_y+1):
+        for x in range(max_x+1): 
+            if (x, y) not in set(warehouse.walls + warehouse.targets):
+                if( ((x-1,y) in warehouse.walls and (x,y-1) in warehouse.walls) or 
+                    ((x-1,y) in warehouse.walls and (x,y+1) in warehouse.walls) or
+                    ((x+1,y) in warehouse.walls and (x,y-1) in warehouse.walls) or
+                    ((x+1,y) in warehouse.walls and (x,y+1) in warehouse.walls)
+                ):
+                    corners.append((x,y))
+    
+    # 2. find inner space
+    inner_cells = []
+    y_cells = []            
+    x_cells = []
+    
+    for y in range(max_y + 1): # horizontally find cells between min and max wall's coordinates
+        min_x_row = min(_x for _x, _y in warehouse.walls if y == _y)
+        max_x_row = max(_x for _x, _y in warehouse.walls if y == _y)
+        for x in range(min_x_row + 1, max_x_row):
+            cc = (x,y) # checking cell
+            if cc not in warehouse.walls:
+                x_cells.append(cc)
+    
+    for x in range(max_x + 1): # vertically find cells between min and max wall's coordinates
+        min_y_row = min(_y for _x, _y in warehouse.walls if x == _x)
+        max_y_row = max(_y for _x, _y in warehouse.walls if x == _x)
+        for y in range(min_y_row + 1, max_y_row):
+            cc = (x,y) # checking cell
+            if cc not in warehouse.walls:
+                y_cells.append(cc)
+           
+    inner_cells = set(x_cells) & set(y_cells)     
+                
+                
+    # 3. find taboos      
+    taboo_cells = []
+    for corner in corners:
+        if corner in inner_cells:
+            taboo_cells.append(corner)
+    
+    
+    # 4. draw the new puzzle in string presentation
+    string_rep_puzzle = ""
+    x = 0
+    y = 0
+    for cell in str(warehouse):
+        if cell == "\n":
+            y += 1
+            x = 0
+            string_rep_puzzle += cell
+            continue # skip one cell cause the puzzle has a space gap in every fisrt line
+    
+        if (x, y) in taboo_cells:
+            cell = "X"
+        
+        # TEST: mark inner cells
+        # if (x, y) in inner_cells:
+        #     cell = "❤️"
+        
+        if cell not in [" ", "#", "X", "❤️"]:
+            cell = " "
+
+        string_rep_puzzle += cell
+        x += 1
+    
+    
+    
+    print(string_rep_puzzle)
+    return string_rep_puzzle
+      
 
 
 class SokobanPuzzle(search.Problem):
@@ -91,6 +172,24 @@ class SokobanPuzzle(search.Problem):
         """
         raise NotImplementedError
 
+def check_action_seq_update_wh(warehouse, action_seq, coord1, coord2):
+    '''
+    @param coord1: a coordinate of "one" step from the original coordinate
+    @param coord2: a coordinate of "two" steps from the original coordinate
+    '''
+    if coord1 in warehouse.walls:
+            return 'Failure'
+        
+    if coord1 in warehouse.boxes: 
+        if coord2 in set(warehouse.walls + warehouse.boxes):
+            return 'Failure'
+        box_idx = warehouse.boxes.index(coord1) # box index
+        warehouse.boxes[box_idx] = coord2 # update box
+
+    warehouse.worker = tuple(coord1) # update worker
+    return check_action_seq(warehouse, action_seq)
+
+    
 
 def check_action_seq(warehouse, action_seq):
     '''
@@ -116,10 +215,30 @@ def check_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     
-    ##         "INSERT YOUR CODE HERE"
+    wh = warehouse.copy()
+    x, y = wh.worker
+    # wallsAndBoxes = set(wh.walls + wh.boxes)
     
-    raise NotImplementedError()
+    if not action_seq:
+        return wh.__str__()
+        
+    action = action_seq.pop(0)
+    if action == "Left":
+        return check_action_seq_update_wh(wh, action_seq, (x-1,y), (x-2,y))
+    elif action == "Right":
+        return check_action_seq_update_wh(wh, action_seq, (x+1,y), (x+2,y))
+    elif action == "Up":
+        return check_action_seq_update_wh(wh, action_seq, (x,y-1), (x,y-2))
+    elif action == "Down":
+        return check_action_seq_update_wh(wh, action_seq, (x,y+1), (x,y+2))
+        
+    return wh.__str__()
 
+    
+
+
+
+from collections import deque
 
 def solve_sokoban_elem(warehouse):
     '''    
@@ -132,13 +251,63 @@ def solve_sokoban_elem(warehouse):
         If puzzle cannot be solved return the string 'Impossible'
         If a solution was found, return a list of elementary actions that solves
             the given puzzle coded with 'Left', 'Right', 'Up', 'Down'
-            For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
+            For example, ['Left', 'Down', 'Down', 'Right', 'Up', 'Down']
             If the puzzle is already in a goal state, simply return []
     '''
     
-    ##         "INSERT YOUR CODE HERE"
+    # Check if the puzzle is already solved
+    if set(warehouse.boxes) == set(warehouse.targets):
+        return []
     
-    raise NotImplementedError()
+    # Directions for moves
+    moves = {
+        "Left": (-1, 0),
+        "Right": (1, 0),
+        "Up": (0, -1),
+        "Down": (0, 1)
+    }
+
+    # Queue for BFS: stores (current warehouse state, action sequence)
+    queue = deque([(warehouse.copy(), [])])
+    visited = set()  # To keep track of visited states
+
+    while queue:
+        current_warehouse, actions = queue.popleft()
+
+        # Check if the current state is a goal state
+        if set(current_warehouse.boxes) == set(current_warehouse.targets):
+            return actions
+
+        # Explore possible actions
+        for action, (dx, dy) in moves.items():
+            # Calculate new worker position
+            new_worker = (current_warehouse.worker[0] + dx, current_warehouse.worker[1] + dy)
+            new_box = (new_worker[0] + dx, new_worker[1] + dy)  # Position where the box would move if pushed
+            
+            # Check if the new worker position is valid
+            if new_worker not in current_warehouse.walls:
+                # Check if the worker is pushing a box
+                if new_worker in current_warehouse.boxes:
+                    if new_box in current_warehouse.walls or new_box in current_warehouse.boxes:
+                        continue  # Invalid move
+                    # Update the state by pushing the box
+                    new_boxes = current_warehouse.boxes.copy()
+                    new_boxes[new_boxes.index(new_worker)] = new_box
+                    new_warehouse = current_warehouse.copy(worker=new_worker, boxes=new_boxes)
+                else:
+                    new_warehouse = current_warehouse.copy(worker=new_worker)
+                
+                # Convert warehouse state to a hashable type for visited checking
+                state_hash = (new_warehouse.worker, tuple(sorted(new_warehouse.boxes)))
+                
+                if state_hash not in visited:
+                    visited.add(state_hash)
+                    queue.append((new_warehouse, actions + [action]))
+    
+    return 'Impossible'
+
+    
+
 
 
 def can_go_there(warehouse, dst):
@@ -179,4 +348,3 @@ def solve_sokoban_macro(warehouse):
     ##         "INSERT YOUR CODE HERE"
     
     raise NotImplementedError()
-
