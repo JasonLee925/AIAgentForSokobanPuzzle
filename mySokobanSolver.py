@@ -168,6 +168,23 @@ class SokobanPuzzle(search.Problem):
         raise NotImplementedError
 
 
+def check_action_seq_update_wh (warehouse, action_seq, coord1, coord2):
+    '''
+    @param coord1: a coordinate of "one" step from the original coordinate
+    @param coord2: a coordinate of "two" steps from the original coordinate
+    '''
+    if coord1 in warehouse.walls:
+            return 'Failure'
+        
+    if coord1 in warehouse.boxes: 
+        if coord2 in set(warehouse.walls + warehouse.boxes):
+            return 'Failure'
+        box_idx = warehouse.boxes.index(coord1) # box index
+        warehouse.boxes[box_idx] = coord2 # update box
+
+    warehouse.worker = tuple(coord1) # update worker
+    return check_action_seq(warehouse, action_seq)
+
 def check_action_seq(warehouse, action_seq):
     '''
     
@@ -192,9 +209,24 @@ def check_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     
-    ##         "INSERT YOUR CODE HERE"
+    wh = warehouse.copy()
+    x, y = wh.worker
+    # wallsAndBoxes = set(wh.walls + wh.boxes)
     
-    raise NotImplementedError()
+    if not action_seq:
+        return wh.__str__()
+        
+    action = action_seq.pop(0)
+    if action == "Left":
+        return check_action_seq_update_wh(wh, action_seq, (x-1,y), (x-2,y))
+    elif action == "Right":
+        return check_action_seq_update_wh(wh, action_seq, (x+1,y), (x+2,y))
+    elif action == "Up":
+        return check_action_seq_update_wh(wh, action_seq, (x,y-1), (x,y-2))
+    elif action == "Down":
+        return check_action_seq_update_wh(wh, action_seq, (x,y+1), (x,y+2))
+        
+    return wh.__str__()
 
 
 def solve_sokoban_elem(warehouse):
