@@ -24,7 +24,7 @@ def my_team():
     '''
 
     raise NotImplementedError()
- 
+
 
 def taboo_cells(warehouse):
     '''  
@@ -47,9 +47,38 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.  
     '''
-    ##         "INSERT YOUR CODE HERE"    
-    raise NotImplementedError()
+    
+    # find taboos 🚷
+    solver = SokobanPuzzle(warehouse)
+    taboo_cells = solver.find_taboo_cells()
+    
+    # draw the new puzzle in string presentation 
+    string_rep_puzzle = ""
+    x = 0
+    y = 0
+    for cell in str(warehouse):
+        if cell == "\n":
+            y += 1
+            x = 0
+            string_rep_puzzle += cell
+            continue # skip one cell cause the puzzle has a space gap in every fisrt line
+    
+        if (x, y) in taboo_cells:
+            cell = "X"
+        
+        # TEST: mark inner cells
+        # if (x, y) in inner_cells:
+        #     cell = "❤️"
+        
+        if cell not in [" ", "#", "X", "❤️"]:
+            cell = " "
 
+        string_rep_puzzle += cell
+        x += 1
+    
+    # print(string_rep_puzzle)
+    return string_rep_puzzle
+      
 
 class EAction(Enum):
     Up = ((0,-1), (0, -2))
@@ -106,20 +135,17 @@ class SokobanPuzzle(search.Problem):
     If self.macro is set True, the 'actions' function should return 
     macro actions. If self.macro is set False, the 'actions' function should 
     return elementary actions.
-    
-    
     '''
     
     def __init__(self, warehouse):
-        # assert isinstance(warehouse, Warehouse)  
         self.warehouse = warehouse
         self.initial = tuple(self.warehouse.worker), tuple(self.warehouse.boxes) 
-        self.taboo_cells = self.taboos()
+        self.taboo_cells = self.find_taboo_cells()
         
         self.allow_taboo_push = False
         self.marco = True
-            
-    def taboos(self):
+    
+    def find_taboo_cells(self): 
         # find the boundaries of the maze
         min_x = min ([x for x,y in self.warehouse.walls])
         max_x = max ([x for x,y in self.warehouse.walls])
@@ -272,6 +298,23 @@ class SokobanPuzzle(search.Problem):
 
 #### ---------- ####
  
+def check_action_seq_update_wh (warehouse, action_seq, coord1, coord2):
+    '''
+    @param coord1: a coordinate of "one" step from the original coordinate
+    @param coord2: a coordinate of "two" steps from the original coordinate
+    '''
+    if coord1 in warehouse.walls:
+            return 'Failure'
+        
+    if coord1 in warehouse.boxes: 
+        if coord2 in set(warehouse.walls + warehouse.boxes):
+            return 'Failure'
+        box_idx = warehouse.boxes.index(coord1) # box index
+        warehouse.boxes[box_idx] = coord2 # update box
+
+    warehouse.worker = tuple(coord1) # update worker
+    return check_action_seq(warehouse, action_seq)
+
 def check_action_seq(warehouse, action_seq):
     '''
     
@@ -296,10 +339,20 @@ def check_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     
-    ##         "INSERT YOUR CODE HERE"
+    wh = warehouse.copy()
+    x, y = wh.worker
     
-    raise NotImplementedError()
+    if not action_seq:
+        return wh.__str__()
         
+    action = action_seq.pop(0)
+    for e_action in EAction:
+        if action == e_action.name:
+            coord1, coord2 = e_action.get_next_coordinates(x,y)
+            return check_action_seq_update_wh(wh, action_seq, coord1, coord2)
+        
+    return wh.__str__()
+
 
 def solve_sokoban_elem(warehouse):
     '''    
