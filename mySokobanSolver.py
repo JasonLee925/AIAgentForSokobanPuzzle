@@ -248,6 +248,7 @@ def solve_sokoban_elem(warehouse):
     
     raise NotImplementedError()
 
+from collections import deque
 
 def can_go_there(warehouse, dst):
     '''    
