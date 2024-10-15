@@ -44,85 +44,8 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.  
     '''
-    # find the boundaries of the maze
-    min_x = min ([x for x,y in warehouse.walls])
-    max_x = max ([x for x,y in warehouse.walls])
-    min_y = min ([y for x,y in warehouse.walls])
-    max_y = max ([y for x,y in warehouse.walls])
-    
-    # 1. find corners 
-    corners = []
-    for y in range(max_y+1):
-        for x in range(max_x+1): 
-            if (x, y) not in set(warehouse.walls + warehouse.targets):
-                if( ((x-1,y) in warehouse.walls and (x,y-1) in warehouse.walls) or 
-                    ((x-1,y) in warehouse.walls and (x,y+1) in warehouse.walls) or
-                    ((x+1,y) in warehouse.walls and (x,y-1) in warehouse.walls) or
-                    ((x+1,y) in warehouse.walls and (x,y+1) in warehouse.walls)
-                ):
-                    corners.append((x,y))
-    
-    # 2. find inner space
-    inner_cells = []
-    y_cells = []            
-    x_cells = []
-    
-    for y in range(max_y + 1): # horizontally find cells between min and max wall's coordinates
-        min_x_row = min(_x for _x, _y in warehouse.walls if y == _y)
-        max_x_row = max(_x for _x, _y in warehouse.walls if y == _y)
-        for x in range(min_x_row + 1, max_x_row):
-            cc = (x,y) # checking cell
-            if cc not in warehouse.walls:
-                x_cells.append(cc)
-    
-    for x in range(max_x + 1): # vertically find cells between min and max wall's coordinates
-        min_y_row = min(_y for _x, _y in warehouse.walls if x == _x)
-        max_y_row = max(_y for _x, _y in warehouse.walls if x == _x)
-        for y in range(min_y_row + 1, max_y_row):
-            cc = (x,y) # checking cell
-            if cc not in warehouse.walls:
-                y_cells.append(cc)
-           
-    inner_cells = set(x_cells) & set(y_cells)     
-                
-                
-    # 3. find taboos      
-    taboo_cells = []
-    for corner in corners:
-        if corner in inner_cells:
-            taboo_cells.append(corner)
-    
-    
-    # 4. draw the new puzzle in string presentation
-    string_rep_puzzle = ""
-    x = 0
-    y = 0
-    for cell in str(warehouse):
-        if cell == "\n":
-            y += 1
-            x = 0
-            string_rep_puzzle += cell
-            continue # skip one cell cause the puzzle has a space gap in every fisrt line
-    
-        if (x, y) in taboo_cells:
-            cell = "X"
-        
-        # TEST: mark inner cells
-        # if (x, y) in inner_cells:
-        #     cell = "❤️"
-        
-        if cell not in [" ", "#", "X", "❤️"]:
-            cell = " "
-
-        string_rep_puzzle += cell
-        x += 1
-    
-    
-    
-    print(string_rep_puzzle)
-    return string_rep_puzzle
       
-    
+    raise NotImplementedError()
 
 class SokobanPuzzle(search.Problem):
     '''
@@ -168,22 +91,6 @@ class SokobanPuzzle(search.Problem):
         raise NotImplementedError
 
 
-def check_action_seq_update_wh (warehouse, action_seq, coord1, coord2):
-    '''
-    @param coord1: a coordinate of "one" step from the original coordinate
-    @param coord2: a coordinate of "two" steps from the original coordinate
-    '''
-    if coord1 in warehouse.walls:
-            return 'Failure'
-        
-    if coord1 in warehouse.boxes: 
-        if coord2 in set(warehouse.walls + warehouse.boxes):
-            return 'Failure'
-        box_idx = warehouse.boxes.index(coord1) # box index
-        warehouse.boxes[box_idx] = coord2 # update box
-
-    warehouse.worker = tuple(coord1) # update worker
-    return check_action_seq(warehouse, action_seq)
 
 def check_action_seq(warehouse, action_seq):
     '''
@@ -209,24 +116,7 @@ def check_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     
-    wh = warehouse.copy()
-    x, y = wh.worker
-    # wallsAndBoxes = set(wh.walls + wh.boxes)
-    
-    if not action_seq:
-        return wh.__str__()
-        
-    action = action_seq.pop(0)
-    if action == "Left":
-        return check_action_seq_update_wh(wh, action_seq, (x-1,y), (x-2,y))
-    elif action == "Right":
-        return check_action_seq_update_wh(wh, action_seq, (x+1,y), (x+2,y))
-    elif action == "Up":
-        return check_action_seq_update_wh(wh, action_seq, (x,y-1), (x,y-2))
-    elif action == "Down":
-        return check_action_seq_update_wh(wh, action_seq, (x,y+1), (x,y+2))
-        
-    return wh.__str__()
+    raise NotImplementedError()
 
 
 def solve_sokoban_elem(warehouse):
@@ -284,7 +174,42 @@ def solve_sokoban_macro(warehouse):
         If the puzzle is already in a goal state, simply return []
     '''
     
-    ##         "INSERT YOUR CODE HERE"
-    
-    raise NotImplementedError()
+    worker = warehouse.worker
+    boxes = warehouse.boxes
+    targets = warehouse.targets
+
+    macro_actions = []
+
+    while boxes:
+        # Find the closest box to the worker
+        closest_box = min(boxes, key=lambda b: abs(worker[0] - b[0]) + abs(worker[1] - b[1]))
+        
+        # Find the closest target to this box
+        closest_target = min(targets, key=lambda t: abs(closest_box[0] - t[0]) + abs(closest_box[1] - t[1]))
+        
+        # Determine the direction to push the box
+        dx = closest_target[0] - closest_box[0]
+        dy = closest_target[1] - closest_box[1]
+        
+        if dx != 0:
+            action = 'Right' if dx > 0 else 'Left'
+            push_direction = (1, 0) if dx > 0 else (-1, 0)
+        else:
+            action = 'Down' if dy > 0 else 'Up'
+            push_direction = (0, 1) if dy > 0 else (0, -1)
+        
+        # Add the macro action (remember to swap x and y for row, column format)
+        macro_actions.append(((closest_box[1], closest_box[0]), action))
+        
+        # Update box position
+        new_box_pos = (closest_box[0] + push_direction[0], closest_box[1] + push_direction[1])
+        boxes.remove(closest_box)
+        if new_box_pos not in targets:
+            boxes.append(new_box_pos)
+        
+        # Update worker position (takes the place of the old box position)
+        worker = closest_box
+
+    return macro_actions
+
 
