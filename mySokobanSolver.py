@@ -22,8 +22,12 @@ def my_team():
     of triplet of the form (student_number, first_name, last_name)
     e.g.  [ (1234567, 'Ada', 'Lovelace'), (1234568, 'Grace', 'Hopper'), (1234569, 'Eva', 'Tardos') ]
     '''
+    
+    return [
+         ('n11794615', 'Saki', 'Endo'),  
+         ('n11514256', 'Sheng', 'Lee')
+    ]
 
-    raise NotImplementedError()
 
 
 def taboo_cells(warehouse):
@@ -381,6 +385,7 @@ def solve_sokoban_elem(warehouse):
 
     return solver.print_solution(sol_ts)
 
+from collections import deque
 
 def can_go_there(warehouse, dst):
     '''    
@@ -394,9 +399,47 @@ def can_go_there(warehouse, dst):
       False otherwise
     '''
     
-    ##         "INSERT YOUR CODE HERE"
-    
-    raise NotImplementedError()
+    # Convert (y, x) format to (x, y) format for internal use
+    start = (warehouse.worker[1], warehouse.worker[0])  # (row, col) to (x, y)
+    dst = (dst[1], dst[0])  # (row, col) to (x, y)
+
+    # Obstacles remain in (x, y) format
+    obstacles = set((x, y) for x, y in warehouse.walls + warehouse.boxes)
+    visited = set()
+    queue = deque([start])
+
+    if dst in obstacles:
+        return False
+
+    # Dynamically calculate the grid dimensions from the walls
+    max_x = max(x for x, y in warehouse.walls)  # maximum column index (width)
+    max_y = max(y for x, y in warehouse.walls)  # maximum row index (height)
+
+    # BFS search
+    while queue:
+        current = queue.popleft()
+
+        if current == dst:
+            return True
+        
+        if current in visited:
+            continue
+        
+        visited.add(current)
+        
+        # Left, Right, Up, Down (using x, y format)
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            next_pos = (current[0] + dx, current[1] + dy)
+            
+            # Ensure the next position is within grid bounds
+            if not (0 <= next_pos[0] <= max_x and 0 <= next_pos[1] <= max_y):
+                continue
+            
+            # Check if the position is not an obstacle and hasn't been visited
+            if next_pos not in obstacles and next_pos not in visited:
+                queue.append(next_pos)
+
+    return False
 
 def solve_sokoban_macro(warehouse):
     '''    
