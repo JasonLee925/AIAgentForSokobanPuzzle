@@ -22,8 +22,12 @@ def my_team():
     of triplet of the form (student_number, first_name, last_name)
     e.g.  [ (1234567, 'Ada', 'Lovelace'), (1234568, 'Grace', 'Hopper'), (1234569, 'Eva', 'Tardos') ]
     '''
+    
+    return [
+         ('n11794615', 'Saki', 'Endo'),  
+         ('n11514256', 'Sheng', 'Lee')
+    ]
 
-    raise NotImplementedError()
 
 
 def taboo_cells(warehouse):
