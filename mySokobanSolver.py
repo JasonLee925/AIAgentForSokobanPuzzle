@@ -90,6 +90,11 @@ class EAction(Enum):
     Right = ((1,0), (2,0))
     Left = ((-1,0), (-2,0))
     
+    def get_next_coordinate(self, x, y):
+        one_step = self.value[0]
+        return (x + one_step[0], y + one_step[1])
+        
+        
     def get_next_coordinates(self, x, y):
         '''
         This funciton returns the next two coordinates based on the action.
@@ -106,9 +111,9 @@ class EAction(Enum):
             - coord1: a coordinate of 1 step from (x,y) towards the direction (action) 
             - coord2: a coordinate of 2 steps from (x,y) towards the direction (action) 
         '''
-        one_step = self.value[0]
+        coord1 = self.get_next_coordinate(x,y)
+        
         two_steps = self.value[1]
-        coord1 = (x + one_step[0], y + one_step[1])
         coord2 = (x + two_steps[0], y + two_steps[1])
         return coord1, coord2
     
@@ -141,13 +146,14 @@ class SokobanPuzzle(search.Problem):
     return elementary actions.
     '''
     
-    def __init__(self, warehouse):
+    def __init__(self, warehouse, macro=False):
         self.warehouse = warehouse
-        self.initial = tuple(self.warehouse.worker), tuple(self.warehouse.boxes) 
-        self.taboo_cells = self.find_taboo_cells()
         
+        self.initial = tuple(self.warehouse.worker), tuple(self.warehouse.boxes) 
+            
+        self.taboo_cells = self.find_taboo_cells()
         self.allow_taboo_push = False
-        self.marco = True
+        self.marco = macro
     
     def find_taboo_cells(self): 
         # find the boundaries of the maze
@@ -209,25 +215,48 @@ class SokobanPuzzle(search.Problem):
         what type of list of actions is to be returned.
         """
         
-        (x, y), _ = state
-        
-        action_list = []
-        
-        if self.check_legal_move(state, *EAction.Left.get_next_coordinates(x,y)):
-            action_list += ['Left']
+        if self.marco == False:
+            # elem
+            (x, y), _ = state
+            
+            action_list = []
+            
+            if self.check_legal_move_elem(state, *EAction.Left.get_next_coordinates(x,y)):
+                action_list += ['Left']
 
-        if self.check_legal_move(state, *EAction.Up.get_next_coordinates(x,y)):
-            action_list += ['Up']
+            if self.check_legal_move_elem(state, *EAction.Up.get_next_coordinates(x,y)):
+                action_list += ['Up']
 
-        if self.check_legal_move(state, *EAction.Right.get_next_coordinates(x,y)):
-            action_list += ['Right']
+            if self.check_legal_move_elem(state, *EAction.Right.get_next_coordinates(x,y)):
+                action_list += ['Right']
 
-        if self.check_legal_move(state, *EAction.Down.get_next_coordinates(x,y)):
-            action_list += ['Down']
+            if self.check_legal_move_elem(state, *EAction.Down.get_next_coordinates(x,y)):
+                action_list += ['Down']
+
+            return action_list
         
-        return action_list
-        
-    def check_legal_move(self, state, coord1, coord2):
+        else:
+            # marco
+            _, boxes = state
+            action_list = []
+            
+            for (x, y) in boxes:
+                if self.check_move_macro(state, (x+1,y), EAction.Left.get_next_coordinate(x,y)):
+                    action_list += [((x,y), 'Left')]
+
+                if self.check_move_macro(state, (x,y+1), EAction.Up.get_next_coordinate(x,y)):
+                    action_list += [((x,y), 'Up')]
+
+                if self.check_move_macro(state, (x-1,y), EAction.Right.get_next_coordinate(x,y)):
+                    action_list += [((x,y), 'Right')]
+
+                if self.check_move_macro(state, (x,y-1), EAction.Down.get_next_coordinate(x,y)):
+                    action_list += [((x,y), 'Down')]
+            
+            
+            return action_list 
+    
+    def check_legal_move_elem(self, state, coord1, coord2):
         
         _, box_coords = state
         box_coords = list(box_coords)
@@ -237,19 +266,64 @@ class SokobanPuzzle(search.Problem):
         if coord1 in box_coords: # bumps into a box 
             if coord2 in set(self.warehouse.walls + box_coords):
                 return False 
-            if coord2 in self.taboo_cells:
+            if self.allow_taboo_push == False and coord2 in self.taboo_cells:
                 return False
             
         return True
+            
+    def check_move_macro(self, state, before_box_coord, coord1):
+        # macro 
+        worker, box_coords = state
+        box_coords = list(box_coords)
+        if coord1 in set(self.warehouse.walls + box_coords): # bumps into a wall
+            # print("a box goes on wall+boxes: ", before_box_coord)
+            return False
         
+        if self.allow_taboo_push == False and coord1 in self.taboo_cells:
+            # print("taboo: ", before_box_coord)
+            return False
+        
+        if before_box_coord in set(self.warehouse.walls + box_coords):
+            # print("work goes on wall/boxes: ", before_box_coord)
+            return False
+         
+        (x, y) = before_box_coord 
+        self.warehouse.worker = tuple(worker)
+        self.warehouse.boxes = box_coords
+        if can_go_there(self.warehouse, (y, x)) == False:
+            # print("cangothere:" ,before_box_coord) 
+            return False
+        
+        return True
+    
     def result(self, state, action):
         
         (x, y), box_coords = state
+        coord1 = (x,y) 
+        
+        if self.marco:
+            #macro
+            current_box_coord, _action = action
+            new_box_coord = current_box_coord
+            for e_action in EAction:
+                if _action == e_action.name:
+                    box_coords = list(box_coords)
+                    
+                    new_box_coord = e_action.get_next_coordinate(*current_box_coord)
+                    box_idx = box_coords.index(current_box_coord) # box index
+                    box_coords[box_idx] = new_box_coord # update box coord
+                    break
+            
+            return tuple(current_box_coord), tuple(box_coords)
+            
+        
+        # elem
         coord1, coord2 = (x,y), (x,y) 
         for e_action in EAction:
              if action == e_action.name:
+                    
                 coord1, coord2 = e_action.get_next_coordinates(x,y)
-                         
+                        
                 box_coords = list(box_coords)
                 
                 if coord1 in box_coords: # bumps into a box 
@@ -265,27 +339,24 @@ class SokobanPuzzle(search.Problem):
         return set(box_coords) == set(self.warehouse.targets)
               
     def h(self, state):
-        # (x, y), box_coords = state
-        h_box = 0
-        h_worker = 0
-        worker_coord = state.state[0]
-        min_worker_distance = None
-        for box_coord in state.state[1]:
-            worker_distance = self.find_manhattan(box_coord, worker_coord)
-            if min_worker_distance == None or worker_distance < min_worker_distance:
-                min_worker_distance = worker_distance
-            min_box_distance = None                
-            for target_coord in self.warehouse.targets:
-                box_distance = self.find_manhattan(box_coord, target_coord)
-                if min_box_distance == None or box_distance < min_box_distance:
-                    min_box_distance = box_distance
-            h_box+= min_box_distance 
-        h_worker = min_worker_distance
+        """
+        h = min(box_a to target) + (box_a to worker)
+        """
+        worker = state.state[0]
+        boxes = state.state[1]
+        total_distance = None
+        for box in boxes:
+            total_distance = find_manhattan(box, worker) 
+            min_box_to_target_distance = None                
+            for target in self.warehouse.targets:
+                box_to_target_distance = find_manhattan(box, target)
+                if min_box_to_target_distance == None or box_to_target_distance < min_box_to_target_distance:
+                    min_box_to_target_distance = box_to_target_distance
+                    
+            total_distance += min_box_to_target_distance 
+            
 
-        return h_worker + h_box
-    
-    def find_manhattan(self, p1, p2):
-        return sum(abs(sum1-sum2) for sum1, sum2 in zip(p1,p2))
+        return total_distance
     
     def print_solution(self, goal_node):
         path = goal_node.path()
@@ -293,6 +364,15 @@ class SokobanPuzzle(search.Problem):
         print( f"Solution takes {len(path)-1} steps from the initial state to the goal state\n")
         # print( "Below is the sequence of moves\n")
         moves = []
+        
+        if self.marco:
+            for node in path:
+                if node.action:
+                    coord = node.action[0]
+                    moves += [((coord[1], coord[0]), node.action[1])]
+       
+            return moves
+        
         for node in path:
             if node.action:
                 moves += [f"{node.action}"]
@@ -300,7 +380,68 @@ class SokobanPuzzle(search.Problem):
         return moves
         
 
-#### ---------- ####
+
+class MazePuzzle(search.Problem):
+    '''
+    Create this class for can_go_there() function
+    '''
+    def __init__(self, warehouse, dst=(-1,-1)):
+        self.warehouse = warehouse
+        self.initial = tuple(self.warehouse.worker), tuple(self.warehouse.boxes) 
+        self.dst = dst
+            
+    
+    def actions(self, state):
+        (x, y), _ = state
+        action_list = []
+        if self.check_legel_can_go_there(state, EAction.Left.get_next_coordinate(x,y)):
+            action_list += ['Left']
+            
+        if self.check_legel_can_go_there(state, EAction.Up.get_next_coordinate(x,y)):
+            action_list += ['Up']
+
+        if self.check_legel_can_go_there(state, EAction.Right.get_next_coordinate(x,y)):
+            action_list += ['Right']
+
+        if self.check_legel_can_go_there(state, EAction.Down.get_next_coordinate(x,y)):
+            action_list += ['Down']
+
+        return action_list
+
+    def check_legel_can_go_there(self, state, coord1):
+        _, box_coords = state
+        box_coords = list(box_coords)
+        if coord1 in set(self.warehouse.walls + box_coords):
+            return False
+        
+        return True
+
+    def result(self, state, action):
+        (x, y), box_coords = state
+        coord1 = (x,y) 
+        
+        # can go there
+        for e_action in EAction:
+            if action == e_action.name:
+                coord1 = e_action.get_next_coordinate(x,y) 
+                break
+        
+        return coord1, box_coords
+
+    def goal_test(self, state):
+        worker, _ = state
+        return worker == self.dst
+
+    def h(self, state):
+        worker, _ = state.state
+        return find_manhattan(worker, self.dst)
+
+
+
+#### --------------------------------------------------------------------------------------------- ####
+ 
+def find_manhattan(p1, p2):
+    return sum(abs(sum1-sum2) for sum1, sum2 in zip(p1,p2))
  
 def check_action_seq_update_wh (warehouse, action_seq, coord1, coord2):
     '''
@@ -399,47 +540,21 @@ def can_go_there(warehouse, dst):
       False otherwise
     '''
     
-    # Convert (y, x) format to (x, y) format for internal use
-    start = (warehouse.worker[1], warehouse.worker[0])  # (row, col) to (x, y)
-    dst = (dst[1], dst[0])  # (row, col) to (x, y)
+    dst = (dst[1], dst[0])  # (row, col) to (x, y)    
+    
+    # solver = SokobanPuzzle(warehouse, macro=False, dst=dst)
+    solver = MazePuzzle(warehouse, dst=dst)
+    
+    t0 = time.time()
+    sol_ts = search.breadth_first_graph_search(solver)
+    # sol_ts = search.astar_graph_search(solver)
+    t1 = time.time()
 
-    # Obstacles remain in (x, y) format
-    obstacles = set((x, y) for x, y in warehouse.walls + warehouse.boxes)
-    visited = set()
-    queue = deque([start])
-
-    if dst in obstacles:
+    # print (f"Solver took {1000*(t1-t0):.2f} milli-seconds to find a solution.")
+    if sol_ts == None:
         return False
-
-    # Dynamically calculate the grid dimensions from the walls
-    max_x = max(x for x, y in warehouse.walls)  # maximum column index (width)
-    max_y = max(y for x, y in warehouse.walls)  # maximum row index (height)
-
-    # BFS search
-    while queue:
-        current = queue.popleft()
-
-        if current == dst:
-            return True
-        
-        if current in visited:
-            continue
-        
-        visited.add(current)
-        
-        # Left, Right, Up, Down (using x, y format)
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            next_pos = (current[0] + dx, current[1] + dy)
-            
-            # Ensure the next position is within grid bounds
-            if not (0 <= next_pos[0] <= max_x and 0 <= next_pos[1] <= max_y):
-                continue
-            
-            # Check if the position is not an obstacle and hasn't been visited
-            if next_pos not in obstacles and next_pos not in visited:
-                queue.append(next_pos)
-
-    return False
+    else:
+        return True
 
 def solve_sokoban_macro(warehouse):
     '''    
@@ -460,42 +575,16 @@ def solve_sokoban_macro(warehouse):
         If the puzzle is already in a goal state, simply return []
     '''
     
-    worker = warehouse.worker
-    boxes = warehouse.boxes
-    targets = warehouse.targets
+    
+    solver = SokobanPuzzle(warehouse, macro=True)
+    t0 = time.time()
+    # sol_ts = search.breadth_first_graph_search(solver)
+    sol_ts = search.astar_graph_search(solver)
+    t1 = time.time()
 
-    macro_actions = []
+    print (f"Solver took {1000*(t1-t0):.2f} milli-seconds to find a solution.")
+    if sol_ts == None:
+        return "Impossible"
 
-    while boxes:
-        # Find the closest box to the worker
-        closest_box = min(boxes, key=lambda b: abs(worker[0] - b[0]) + abs(worker[1] - b[1]))
-        
-        # Find the closest target to this box
-        closest_target = min(targets, key=lambda t: abs(closest_box[0] - t[0]) + abs(closest_box[1] - t[1]))
-        
-        # Determine the direction to push the box
-        dx = closest_target[0] - closest_box[0]
-        dy = closest_target[1] - closest_box[1]
-        
-        if dx != 0:
-            action = 'Right' if dx > 0 else 'Left'
-            push_direction = (1, 0) if dx > 0 else (-1, 0)
-        else:
-            action = 'Down' if dy > 0 else 'Up'
-            push_direction = (0, 1) if dy > 0 else (0, -1)
-        
-        # Add the macro action (remember to swap x and y for row, column format)
-        macro_actions.append(((closest_box[1], closest_box[0]), action))
-        
-        # Update box position
-        new_box_pos = (closest_box[0] + push_direction[0], closest_box[1] + push_direction[1])
-        boxes.remove(closest_box)
-        if new_box_pos not in targets:
-            boxes.append(new_box_pos)
-        
-        # Update worker position (takes the place of the old box position)
-        worker = closest_box
-
-    return macro_actions
-
-
+    return solver.print_solution(sol_ts)
+    
