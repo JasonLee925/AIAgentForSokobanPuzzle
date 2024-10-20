@@ -91,13 +91,16 @@ class EAction(Enum):
     Left = ((-1,0), (-2,0))
     
     def get_next_coordinate(self, x, y):
+        '''
+        This funciton returns the next coordinate towards the given action.
+        '''
         one_step = self.value[0]
         return (x + one_step[0], y + one_step[1])
         
         
     def get_next_coordinates(self, x, y):
         '''
-        This funciton returns the next two coordinates based on the action.
+        This funciton returns the next two coordinates towards the given action.
         
         Example 1:
             If EAction.Up.get_next_coordinates(x,y), 
@@ -150,16 +153,16 @@ class SokobanPuzzle(search.Problem):
         self.warehouse = warehouse
         
         self.initial = tuple(self.warehouse.worker), tuple(self.warehouse.boxes) 
-            
+        
         self.taboo_cells = self.find_taboo_cells()
-        self.allow_taboo_push = False
+        self.allow_taboo_push = False    
         self.marco = macro
     
     def find_taboo_cells(self): 
         # find the boundaries of the maze
-        min_x = min ([x for x,y in self.warehouse.walls])
+        # min_x = min ([x for x,y in self.warehouse.walls])
         max_x = max ([x for x,y in self.warehouse.walls])
-        min_y = min ([y for x,y in self.warehouse.walls])
+        # min_y = min ([y for x,y in self.warehouse.walls])
         max_y = max ([y for x,y in self.warehouse.walls])
 
         # 1. find corners 
@@ -258,13 +261,13 @@ class SokobanPuzzle(search.Problem):
     
     def check_legal_move_elem(self, state, coord1, coord2):
         
-        _, box_coords = state
-        box_coords = list(box_coords)
+        _, boxes = state
+        boxes = list(boxes)
         if coord1 in self.warehouse.walls: # bumps into a wall
             return False
         
-        if coord1 in box_coords: # bumps into a box 
-            if coord2 in set(self.warehouse.walls + box_coords):
+        if coord1 in boxes: # bumps into a box 
+            if coord2 in set(self.warehouse.walls + boxes):
                 return False 
             if self.allow_taboo_push == False and coord2 in self.taboo_cells:
                 return False
@@ -273,9 +276,9 @@ class SokobanPuzzle(search.Problem):
             
     def check_move_macro(self, state, before_box_coord, coord1):
         # macro 
-        worker, box_coords = state
-        box_coords = list(box_coords)
-        if coord1 in set(self.warehouse.walls + box_coords): # bumps into a wall
+        worker, boxes = state
+        boxes = list(boxes)
+        if coord1 in set(self.warehouse.walls + boxes): # bumps into a wall
             # print("a box goes on wall+boxes: ", before_box_coord)
             return False
         
@@ -283,13 +286,13 @@ class SokobanPuzzle(search.Problem):
             # print("taboo: ", before_box_coord)
             return False
         
-        if before_box_coord in set(self.warehouse.walls + box_coords):
+        if before_box_coord in set(self.warehouse.walls + boxes):
             # print("work goes on wall/boxes: ", before_box_coord)
             return False
          
         (x, y) = before_box_coord 
         self.warehouse.worker = tuple(worker)
-        self.warehouse.boxes = box_coords
+        self.warehouse.boxes = boxes
         if can_go_there(self.warehouse, (y, x)) == False:
             # print("cangothere:" ,before_box_coord) 
             return False
@@ -298,7 +301,7 @@ class SokobanPuzzle(search.Problem):
     
     def result(self, state, action):
         
-        (x, y), box_coords = state
+        (x, y), boxes = state
         coord1 = (x,y) 
         
         if self.marco:
@@ -307,14 +310,14 @@ class SokobanPuzzle(search.Problem):
             new_box_coord = current_box_coord
             for e_action in EAction:
                 if _action == e_action.name:
-                    box_coords = list(box_coords)
+                    boxes = list(boxes)
                     
                     new_box_coord = e_action.get_next_coordinate(*current_box_coord)
-                    box_idx = box_coords.index(current_box_coord) # box index
-                    box_coords[box_idx] = new_box_coord # update box coord
+                    box_idx = boxes.index(current_box_coord) # box index
+                    boxes[box_idx] = new_box_coord # update box coord
                     break
             
-            return tuple(current_box_coord), tuple(box_coords)
+            return tuple(current_box_coord), tuple(boxes)
             
         
         # elem
@@ -324,39 +327,48 @@ class SokobanPuzzle(search.Problem):
                     
                 coord1, coord2 = e_action.get_next_coordinates(x,y)
                         
-                box_coords = list(box_coords)
+                boxes = list(boxes)
                 
-                if coord1 in box_coords: # bumps into a box 
-                    box_idx = box_coords.index(coord1) # box index
-                    box_coords[box_idx] = coord2 # update box coord
+                if coord1 in boxes: # bumps into a box 
+                    box_idx = boxes.index(coord1) # box index
+                    boxes[box_idx] = coord2 # update box coord
                     
                 break
             
-        return tuple(coord1), tuple(box_coords)
+        return tuple(coord1), tuple(boxes)
     
     def goal_test(self, state):
         _, box_coords = state
         return set(box_coords) == set(self.warehouse.targets)
               
     def h(self, state):
-        """
-        h = min(box_a to target) + (box_a to worker)
-        """
+        worker, boxes = state.state
+
+        h_box = 0
         worker = state.state[0]
         boxes = state.state[1]
-        total_distance = None
+        worker_box_distance = None
+        # boxes_on_targets = []
         for box in boxes:
-            total_distance = find_manhattan(box, worker) 
-            min_box_to_target_distance = None                
+            worker_box_distance = find_manhattan(box, worker)
+                
+            min_box_distance = None                
             for target in self.warehouse.targets:
-                box_to_target_distance = find_manhattan(box, target)
-                if min_box_to_target_distance == None or box_to_target_distance < min_box_to_target_distance:
-                    min_box_to_target_distance = box_to_target_distance
+                # if target in boxes_on_targets:
+                #     continue
+                # if box == target: # ignore box that is already on a target
+                #     boxes_on_targets.append(target)
+                #     break
+                
+                box_distance = find_manhattan(box, target)
+                if min_box_distance == None or box_distance < min_box_distance:
+                    min_box_distance = box_distance
                     
-            total_distance += min_box_to_target_distance 
+            h_box+= min_box_distance or 0
             
 
-        return total_distance
+        return worker_box_distance + h_box
+    
     
     def print_solution(self, goal_node):
         path = goal_node.path()
@@ -394,21 +406,21 @@ class MazePuzzle(search.Problem):
     def actions(self, state):
         (x, y), _ = state
         action_list = []
-        if self.check_legel_can_go_there(state, EAction.Left.get_next_coordinate(x,y)):
+        if self.check_legel_move(state, EAction.Left.get_next_coordinate(x,y)):
             action_list += ['Left']
             
-        if self.check_legel_can_go_there(state, EAction.Up.get_next_coordinate(x,y)):
+        if self.check_legel_move(state, EAction.Up.get_next_coordinate(x,y)):
             action_list += ['Up']
 
-        if self.check_legel_can_go_there(state, EAction.Right.get_next_coordinate(x,y)):
+        if self.check_legel_move(state, EAction.Right.get_next_coordinate(x,y)):
             action_list += ['Right']
 
-        if self.check_legel_can_go_there(state, EAction.Down.get_next_coordinate(x,y)):
+        if self.check_legel_move(state, EAction.Down.get_next_coordinate(x,y)):
             action_list += ['Down']
 
         return action_list
 
-    def check_legel_can_go_there(self, state, coord1):
+    def check_legel_move(self, state, coord1):
         _, box_coords = state
         box_coords = list(box_coords)
         if coord1 in set(self.warehouse.walls + box_coords):
@@ -431,18 +443,20 @@ class MazePuzzle(search.Problem):
     def goal_test(self, state):
         worker, _ = state
         return worker == self.dst
-
+    
     def h(self, state):
-        worker, _ = state.state
+        worker, _ = state
         return find_manhattan(worker, self.dst)
+        
 
 
 
-#### --------------------------------------------------------------------------------------------- ####
+#### ------------------------------------------------------------------------------------------ ####
  
-def find_manhattan(p1, p2):
+def find_manhattan( p1, p2):
     return sum(abs(sum1-sum2) for sum1, sum2 in zip(p1,p2))
- 
+
+
 def check_action_seq_update_wh (warehouse, action_seq, coord1, coord2):
     '''
     @param coord1: a coordinate of "one" step from the original coordinate
@@ -516,8 +530,8 @@ def solve_sokoban_elem(warehouse):
     
     solver = SokobanPuzzle(warehouse)
     t0 = time.time()
-    sol_ts = search.breadth_first_graph_search(solver)
-    # sol_ts = search.astar_graph_search(solver)
+    # sol_ts = search.breadth_first_graph_search(solver)
+    sol_ts = search.astar_graph_search(solver)
     t1 = time.time()
 
     print (f"Solver took {1000*(t1-t0):.2f} milli-seconds to find a solution.")
