@@ -14,6 +14,7 @@ import search
 import sokoban
 import time
 from enum import Enum
+import math
 
     
 def my_team():
@@ -347,12 +348,15 @@ class SokobanPuzzle(search.Problem):
         h_box = 0
         worker = state.state[0]
         boxes = state.state[1]
-        worker_box_distance = None
+        min_worker_box_distance = None
         # boxes_on_targets = []
         for box in boxes:
             worker_box_distance = find_manhattan(box, worker)
+            if min_worker_box_distance == None or worker_box_distance < min_worker_box_distance:
+                min_worker_box_distance = worker_box_distance 
                 
-            min_box_distance = None                
+                              
+            min_box_target_distance = None 
             for target in self.warehouse.targets:
                 # if target in boxes_on_targets:
                 #     continue
@@ -360,14 +364,14 @@ class SokobanPuzzle(search.Problem):
                 #     boxes_on_targets.append(target)
                 #     break
                 
-                box_distance = find_manhattan(box, target)
-                if min_box_distance == None or box_distance < min_box_distance:
-                    min_box_distance = box_distance
+                box_target_distance = find_manhattan(box, target)
+                if min_box_target_distance == None or box_target_distance < min_box_target_distance:
+                    min_box_target_distance = box_target_distance
                     
-            h_box+= min_box_distance or 0
+            h_box+= min_box_target_distance 
             
 
-        return worker_box_distance + h_box
+        return min_worker_box_distance + h_box
     
     
     def print_solution(self, goal_node):
@@ -457,6 +461,10 @@ def find_manhattan( p1, p2):
     return sum(abs(sum1-sum2) for sum1, sum2 in zip(p1,p2))
 
 
+def find_euclidean(p1, p2):
+    return math.sqrt(sum((a - b) ** 2 for a, b in zip(p1, p2)))
+
+
 def check_action_seq_update_wh (warehouse, action_seq, coord1, coord2):
     '''
     @param coord1: a coordinate of "one" step from the original coordinate
@@ -530,6 +538,7 @@ def solve_sokoban_elem(warehouse):
     
     solver = SokobanPuzzle(warehouse)
     t0 = time.time()
+    # sol_ts = search.depth_first_graph_search(solver)
     # sol_ts = search.breadth_first_graph_search(solver)
     sol_ts = search.astar_graph_search(solver)
     t1 = time.time()
@@ -561,9 +570,9 @@ def can_go_there(warehouse, dst):
     
     t0 = time.time()
 
-    # sol_ts = search.breadth_first_graph_search(solver)
+    sol_ts = search.breadth_first_graph_search(solver)
     # sol_ts = search.depth_first_graph_search(solver)
-    sol_ts = search.astar_graph_search(solver)
+    # sol_ts = search.astar_graph_search(solver)
     t1 = time.time()
 
     # print (f"Solver took {1000*(t1-t0):.2f} milli-seconds to find a solution.")
