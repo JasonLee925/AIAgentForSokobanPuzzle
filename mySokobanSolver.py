@@ -373,7 +373,7 @@ class SokobanPuzzle(search.Problem):
     def print_solution(self, goal_node):
         path = goal_node.path()
         
-        print( f"Solution takes {len(path)-1} steps from the initial state to the goal state\n")
+        print( f"Solution takes {len(path)-1} steps from the initial state to the goal state.")
         # print( "Below is the sequence of moves\n")
         moves = []
         
@@ -447,7 +447,7 @@ class MazePuzzle(search.Problem):
     def h(self, state):
         worker, _ = state
         return find_manhattan(worker, self.dst)
-        
+
 
 
 
@@ -560,8 +560,10 @@ def can_go_there(warehouse, dst):
     solver = MazePuzzle(warehouse, dst=dst)
     
     t0 = time.time()
-    sol_ts = search.breadth_first_graph_search(solver)
-    # sol_ts = search.astar_graph_search(solver)
+
+    # sol_ts = search.breadth_first_graph_search(solver)
+    # sol_ts = search.depth_first_graph_search(solver)
+    sol_ts = search.astar_graph_search(solver)
     t1 = time.time()
 
     # print (f"Solver took {1000*(t1-t0):.2f} milli-seconds to find a solution.")
@@ -592,6 +594,8 @@ def solve_sokoban_macro(warehouse):
     
     solver = SokobanPuzzle(warehouse, macro=True)
     t0 = time.time()
+    
+    # sol_ts = search.depth_first_graph_search(solver)
     # sol_ts = search.breadth_first_graph_search(solver)
     sol_ts = search.astar_graph_search(solver)
     t1 = time.time()
