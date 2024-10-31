@@ -1,0 +1,29 @@
+version: "3"
+services:
+  auth-service:
+    build:
+      context: ./auth-service
+    ports:
+      - "3001:3001" # Maps auth service to localhost:3001
+    environment:
+      - NODE_ENV=production
+      - AUTH_SECRET=mysecretkey # Add any other auth-specific environment variables here
+    networks:
+      - app-network
+
+  video-service:
+    build:
+      context: ./video-service
+    ports:
+      - "3002:3002" # Maps video service to localhost:3002
+    environment:
+      - NODE_ENV=production
+      - VIDEO_PATH=/app/videos # Example environment variable for video path
+    depends_on:
+      - auth-service # Ensures auth-service starts before video-service
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
